@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+
+    <style>
+    #topbar {
+        height: 60px;
+        width: 100%;
+        background-color: #2f3a3a;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+    }
+
+    #topbar button {
+        background-color: #556666;
+        border: none;
+        color: #e0f2f2;
+        font-size: 20px;
+        width: 50px;
+        height: 40px;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+
+    #topbar button:hover {
+        background-color: #6f8888;
+    }
+
+    canvas {
+        display: block;
+        margin: 0 auto;
+        background-color: #1e2626;
+    }
+    </style>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BetterThesia</title>
+</head>
+
+
+
+<body style="margin:0; background-color:#4f5b5b;">
+
+  <div id="topbar">
+    <button id="rewind">⏮</button>
+    <button id="playpause">▶</button>
+    <button id="forward">⏭</button>
+  </div>
+
+  <canvas id="roll" width="1530" height="650"></canvas>
+
+  <script src="./app.js"></script>
+</body>
+</html>
