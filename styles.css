@@ -1,0 +1,59 @@
+.botaoCentro {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+}
+
+.botaoArquivo {
+  margin-left: 30px;
+}
+
+#topbar {
+  height: 53px;
+  width: 100%;
+  background-color: #2f3a3a;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+#topbar button {
+  background-color: #556666;
+  border: none;
+  color: #e0f2f2;
+  font-size: 20px;
+  width: 50px;
+  height: 40px;
+  border-radius: 6px;
+  cursor: pointer;
+  align-self: center;
+}
+
+#topbar button:hover {
+  background-color: #6f8888;
+}
+
+canvas {
+  display: block;
+  margin: 0 auto;
+  background-color: #1e2626;
+}
+
+#main {
+  display: flex;
+  flex-direction: column;
+}
+
+#roll {
+  width: 100%;
+  height: calc(100vh - 160px - 53px);
+  display: block;
+}
+
+#keyboard {
+  width: 100%;
+  height: 160px;
+  display: block;
+}
