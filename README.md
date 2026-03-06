@@ -29,7 +29,7 @@ As the project uses just static files, it's very simple to run it on your own ma
 1. Clone the repository:
 
    ```bash
-   git clone [https://github.com/SEU_USUARIO/betterthesia.git](https://github.com/SEU_USUARIO/betterthesia.git)
+   git clone https://github.com/LapizdaSilva/BetterThesia.git
    ```
    
 2. Navigate to the project file
@@ -70,7 +70,7 @@ Como o projeto utiliza apenas arquivos estáticos, é muito simples rodá-lo na 
 
 1. Faça o clone do repositório:
    ```bash
-   git clone [https://github.com/SEU_USUARIO/betterthesia.git](https://github.com/SEU_USUARIO/betterthesia.git)
+   git clone https://github.com/LapizdaSilva/BetterThesia.git
    ```
    
 2. Navegue até a pasta do projeto:
