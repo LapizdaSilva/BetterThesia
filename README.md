@@ -1,6 +1,6 @@
 # BetterThesia
 
-https://github.com/user-attachments/assets/628c1425-b270-4e98-8857-f2cbd55bdbd3
+![Demonstration](https://github.com/user-attachments/assets/6f1b8a9e-3eb3-4257-a885-6c5fca8a0bc3)
 
 Web interactive application inspired by Synthesia, made to help those who seek free piano appretinceship and midi files playback directly on your browser.
 
