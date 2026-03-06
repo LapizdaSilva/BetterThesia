@@ -3,13 +3,19 @@ let loopRunning = false;
 let practiceMode = "both";
 // "left" | "right" | "both"
 
-const songNotes = [
-  { midi: 48, start: 0, end: 800, hand: "left" },
-  { midi: 52, start: 0, end: 800, hand: "left" },
-  { midi: 55, start: 0, end: 800, hand: "left" },
+let pianoInstrument = null;
+let pianoLoading = false;
 
+const songNotes = [
+  // mão esquerda
+  { midi: 48, start: 0, end: 1200, hand: "left" },
+  { midi: 52, start: 0, end: 1200, hand: "left" },
+  { midi: 55, start: 0, end: 1200, hand: "left" },
+
+  // mão direita
   { midi: 60, start: 0, end: 400, hand: "right" },
   { midi: 62, start: 500, end: 900, hand: "right" },
+  { midi: 64, start: 1000, end: 1400, hand: "right" },
 ];
 
 let waitingForUser = false;
@@ -87,6 +93,10 @@ function redrawUI() {
   drawNotes();
 }
 
+function getKeyByMidi(midi) {
+  return KEYS.find((k) => k.midi === midi);
+}
+
 function onNoteDown(note, velocity = 100) {
   activeNotes.set(note, {
     start: timeline.currentTime,
@@ -95,6 +105,13 @@ function onNoteDown(note, velocity = 100) {
 
   highlightKey(note, true);
   noteOn(note, velocity);
+
+  if (waitingForUser && expectedNotes.has(note)) {
+    expectedNotes.clear();
+    waitingForUser = false;
+    timeline.playing = true;
+    timeline.last = performance.now(); 
+  }
 }
 
 function onNoteUp(note) {
@@ -103,12 +120,33 @@ function onNoteUp(note) {
   activeNotes.delete(note);
   highlightKey(note, false);
   noteOff(note);
+
+  const event = [...midiEvents].reverse().find(n => n.note === note && n.end === null);
+  if (event) {
+    event.end = timeline.currentTime;
+  }
+}
+
+function stopAllNotes() {
+  for (const note in oscillators) {
+    try {
+      oscillators[note].osc.stop();
+    } catch (e) {}
+    delete oscillators[note];
+  }
+
+  for (const note of songNotes) {
+    if (note.started && !note.stopped) {
+      note.stopped = true;
+      highlightKey(note.midi, false);
+    }
+  }
 }
 
 function cleanupEvents() {
   midiEvents.splice(
     0,
-    midiEvents.findIndex((n) => timeline.currentTime - n.end < CLEANUP_TIME)
+    midiEvents.findIndex((n) => timeline.currentTime - n.end < CLEANUP_TIME),
   );
 }
 
@@ -159,33 +197,52 @@ function demoSequence() {
 function drawNotes() {
   ctx2d.clearRect(0, 0, canvas.width, canvas.height);
 
-  for (const note of midiEvents) {
-    const x = (note.note - START_MIDI) * NOTE_WIDTH;
+  for (const note of songNotes) {
+    const key = getKeyByMidi(note.midi);
+    if (!key) continue;
 
-    const end = note.end ?? timeline.currentTime;
+    const bottomY = canvas.height - (note.start - timeline.currentTime) * PX_PER_MS;
+    const height = (note.end - note.start) * PX_PER_MS;
+    const topY = bottomY - height;
 
-    const y = canvas.height - (timeline.currentTime - note.start) * PX_PER_MS;
-
-    const height = (end - note.start) * PX_PER_MS;
-
-    if (height <= 0) continue;
+    if (bottomY < 0 || topY > canvas.height) continue
 
     ctx2d.fillStyle = note.hand === "left" ? "#ff8888" : "#88ff88";
-    ctx2d.fillRect(x, y - height, NOTE_WIDTH, height);
+    ctx2d.fillRect(key.x, topY, key.w, height);
   }
 }
 
-function drawActiveNotes() {
-  for (const [note, data] of activeNotes) {
-    const key = KEYS.find((k) => k.midi === note);
+function loadSong(notes) {
+  midiEvents.length = 0;
+
+  for (const n of notes) {
+    midiEvents.push({
+      note: n.midi,
+      velocity: 100,
+      start: n.start,
+      end: n.end,
+      hand: n.hand,
+      started: false,
+      stopped: false,
+    });
+  }
+}
+
+function drawUserNotes() {
+  for (const event of midiEvents) {
+    const key = getKeyByMidi(event.note);
     if (!key) continue;
 
-    const x = key.x;
-    const width = key.w;
-    const height = (timeline.currentTime - data.start) * PX_PER_MS;
+    const end = event.end !== null ? event.end : timeline.currentTime;
+    
+    const bottomY = canvas.height - (event.start - timeline.currentTime) * PX_PER_MS;
+    const height = (end - event.start) * PX_PER_MS;
+    const topY = bottomY - height;
 
-    ctx2d.fillStyle = "#66aaff";
-    ctx2d.fillRect(x, canvas.height - height, width, height);
+    if (bottomY < 0 || topY > canvas.height) continue;
+
+    ctx2d.fillStyle = "#66aaff"; 
+    ctx2d.fillRect(key.x, topY, key.w, height);
   }
 }
 
@@ -223,23 +280,45 @@ function drawKeyboard(ctx) {
 
       key.x = offset - blackWidth / 2;
       key.w = blackWidth;
+
     }
   }
 
   // brancas
   for (const key of KEYS) {
     if (key.black) continue;
-    ctx.fillStyle = key.active ? "#88ffff" : "#eeeeee";
+    ctx.fillStyle = key.active ? "#7fb1b1" : "#eeeeee";
     ctx.fillRect(key.x, 0, key.w, whiteHeight);
     ctx.strokeStyle = "#000";
     ctx.strokeRect(key.x, 0, key.w, whiteHeight);
   }
 
   // pretas por cima
-  for (const key of KEYS) {
-    if (!key.black) continue;
-    ctx.fillStyle = key.active ? "#00cccc" : "#111111";
-    ctx.fillRect(key.x, 0, key.w, blackHeight);
+    for (const key of KEYS) {
+      if (!key.black) continue;
+      ctx.fillStyle = key.active ? "#00cccc" : "#111111";
+      ctx.fillRect(key.x, 0, key.w, blackHeight);
+    }
+
+    if (waitingForUser) {
+      for (const midi of expectedNotes) {
+        const key = getKeyByMidi(midi);
+        if (!key) continue;
+
+        ctx.beginPath();
+        const radius = key.black ? key.w * 0.25 : key.w * 0.2; 
+        const centerX = key.x + key.w / 2;
+        
+        const centerY = key.black ? blackHeight - radius - 10 : whiteHeight - radius - 15;
+        
+        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        ctx.fillStyle = "#ff3366"; 
+        ctx.fill();
+        
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
   }
 }
 
@@ -274,16 +353,18 @@ if (navigator.requestMIDIAccess) {
 }
 
 function update(now) {
-  if (!timeline.playing) return;
-
-  const delta = now - timeline.last;
-  timeline.currentTime += delta;
-  timeline.last = now;
+  if (timeline.playing) {
+    const delta = now - timeline.last;
+    timeline.currentTime += delta;
+    timeline.last = now;
+    checkPracticeCollision();
+    handleAutoPlayback();
+  }
 
   ctx2d.clearRect(0, 0, canvas.width, canvas.height);
-
   drawNotes();
-  drawActiveNotes();
+
+  keyboardCtx.clearRect(0, 0, keyboardCanvas.width, keyboardCanvas.height);
   drawKeyboard(keyboardCtx);
 
   requestAnimationFrame(update);
@@ -341,80 +422,143 @@ function handleInput(e) {
   }
 }
 
-function scheduleNotes() {
-  for (const note of midiEvents) {
-    if (!shouldPlay(note)) continue;
+function checkPracticeCollision() {
+  if (practiceMode === "off" || waitingForUser) return;
 
-    if (!note.started && note.start <= timeline.currentTime) {
-      // modo treino: pausa e espera input
-      waitingForUser = true;
-      expectedNotes.add(note.note);
-      practiceController.update(timeline.currentTime);
-      practiceController.onUserNote(note);
-      return;
-    }
-
+  for (const note of songNotes) {
     if (
-      note.started &&
-      !note.stopped &&
-      note.end !== null &&
-      note.end <= timeline.currentTime
+      timeline.currentTime >= note.start &&
+      !note.validated &&
+      shouldPlay(note)
     ) {
-      onNoteUp(note.note);
-      note.stopped = true;
-    }
+      stopTimelineAndPrepare(note.start);
 
-    if (
-      !note.started &&
-      !waitingForUser &&
-      note.start <= timeline.currentTime
-    ) {
-      onNoteDown(note.note, note.velocity);
-      note.started = true;
+      songNotes
+        .filter((n) => Math.abs(n.start - note.start) < 50 && shouldPlay(n))
+        .forEach((n) => {
+          expectedNotes.add(n.midi);
+          n.validated = true;
+        });
+
+
+      for (const expectedMidi of expectedNotes) {
+        if (activeNotes.has(expectedMidi)) {
+          expectedNotes.delete(expectedMidi);
+        }
+      }
+
+      if (expectedNotes.size === 0) {
+        waitingForUser = false;
+        timeline.playing = true;
+        timeline.last = performance.now();
+      }
+
+      break;
     }
   }
 }
 
+function stopTimelineAndPrepare(exactStartTime) {
+  timeline.playing = false;
+  waitingForUser = true;
+  timeline.currentTime = exactStartTime;
+}
+
+function handleAutoPlayback() {
+  for (const note of songNotes) {
+    const isAutoPlayNote = 
+      practiceMode === "off" || // "off" significa Auto Play total
+      (practiceMode === "left" && note.hand === "right") || // Praticando a esquerda, o PC toca a direita
+      (practiceMode === "right" && note.hand === "left");   // Praticando a direita, o PC toca a esquerda
+
+    if (timeline.currentTime >= note.start && !note.started) {
+      note.started = true;
+      if (isAutoPlayNote) {
+        highlightKey(note.midi, true);
+        noteOn(note.midi, 100);
+      }
+    }
+
+    if (timeline.currentTime >= note.end && !note.stopped) {
+      note.stopped = true;
+      if (isAutoPlayNote) {
+        highlightKey(note.midi, false);
+        noteOff(note.midi);
+      }
+    }
+  }
+}
+
+const activeAudioNodes = {}; 
+
 function noteOn(note, velocity) {
   if (!ctx) return;
 
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
+  if (activeAudioNodes[note]) {
+    activeAudioNodes[note].stop();
+    delete activeAudioNodes[note];
+  }
 
-  const vol = (velocity / 127) * 0.5;
-
-  gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(vol, ctx.currentTime + 0.01);
-
-  osc.type = "sine";
-  osc.frequency.value = midiToFrequency(note);
-
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-
-  oscillators[note] = { osc, gain };
-  osc.start();
+  if (pianoInstrument) {
+    const vol = (velocity / 127) * 2.0; 
+    
+    const audioNode = pianoInstrument.play(note, ctx.currentTime, {
+      gain: vol,
+      duration: 999 
+    });
+    
+    activeAudioNodes[note] = audioNode;
+  } else {
+  }
 }
 
 function noteOff(note) {
-  const voice = oscillators[note];
-  if (!voice) return;
-
-  const { osc, gain } = voice;
-
-  gain.gain.setValueAtTime(gain.gain.value, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.3);
-
-  osc.stop(ctx.currentTime + 0.3);
-  delete oscillators[note];
+  if (activeAudioNodes[note]) {
+    activeAudioNodes[note].stop(ctx.currentTime + 0.1); 
+    delete activeAudioNodes[note];
+  }
 }
 
 function updateDevices(event) {
   console.log(event);
   console.log(
-    `name: ${event.port.name}, Brand: ${event.port.manufacturer}, Type: ${event.port.type}, State: ${event.port.state}`
+    `name: ${event.port.name}, Brand: ${event.port.manufacturer}, Type: ${event.port.type}, State: ${event.port.state}`,
   );
 }
+
+
+const configBtn = document.getElementById("config");
+
+// Lista de modos que o jogo possui
+const modes = [
+  { id: "both", label: "⚙️ Prática" }, // nenhuma nota vai ser tocada sozinha
+  { id: "right", label: "⚙️ Mão Dir." }, // toca só as notas da mão direita
+  { id: "left", label: "⚙️ Mão Esq." }, // toca só as notas da mão esquerda
+  { id: "off", label: "⚙️ Auto Play" } // joga sozinho
+];
+let currentModeIndex = 0;
+
+configBtn.addEventListener("click", () => {
+  currentModeIndex = (currentModeIndex + 1) % modes.length;
+  
+  const selectedMode = modes[currentModeIndex];
+  practiceMode = selectedMode.id;
+  configBtn.textContent = selectedMode.label;
+
+  if (practiceMode === "off" && waitingForUser) {
+    waitingForUser = false;
+    expectedNotes.clear();
+    if (playPauseBtn.textContent === "⏸") {
+      timeline.playing = true;
+      timeline.last = performance.now();
+
+      if (!timeline.playing){
+        stopAllNotes();
+      }
+    }
+  }
+});
+
 
 function failure() {
   console.log("Failed to access MIDI");
@@ -422,22 +566,43 @@ function failure() {
 
 playPauseBtn.addEventListener("click", async () => {
   if (!ctx) ctx = new AudioContext();
+  if (ctx.state === "suspended") await ctx.resume();
 
-  if (ctx.state === "suspended") {
-    await ctx.resume();
-  }
+  if (timeline.playing) {
+      timeline.playing = false;
+      playPauseBtn.textContent = "▶";
+      stopAllNotes();
+      return; 
+    }
 
-  timeline.playing = !timeline.playing;
+  if (!pianoInstrument) {
+      if (!pianoLoading) {
+        pianoLoading = true;
+        playPauseBtn.textContent = "⏳"; 
+        console.log("A transferir o piano de cauda... aguarde.");
+        
+        try {
+          pianoInstrument = await Soundfont.instrument(ctx, 'acoustic_grand_piano', {
+            soundfont: 'MusyngKite',
+            format: 'mp3'
+          });
+          console.log("Piano carregado com sucesso!");
+        } catch (erro) {
+          console.error("Erro ao carregar o piano:", erro);
+          playPauseBtn.textContent = "▶";
+          pianoLoading = false;
+          return;
+        }
+
+        pianoLoading = false;
+      } else {
+        return; 
+      }
+    }
+
+  timeline.playing = true;
   timeline.last = performance.now();
-
-  playPauseBtn.textContent = timeline.playing ? "⏸" : "▶";
-
-  if (timeline.playing && !loopRunning) {
-    loopRunning = true;
-    requestAnimationFrame(update);
-
-    demoSequence();
-  }
+  playPauseBtn.textContent = "⏸";
 });
 
 rewindBtn.addEventListener("click", () => {
@@ -489,6 +654,50 @@ function getKeyAtPosition(x, y) {
   return null;
 }
 
+if (navigator.requestMIDIAccess) {
+  navigator.requestMIDIAccess().then(onMIDISuccess, onMIDIFailure);
+} else {
+  console.warn("Seu navegador não suporta Web MIDI API.");
+}
+
+function onMIDISuccess(midiAccess) {
+  console.log("🎹 Acesso MIDI concedido e procurando teclados...");
+  
+  // Conecta em todos os teclados que já estão plugados no USB
+  const inputs = midiAccess.inputs.values();
+  for (let input = inputs.next(); input && !input.done; input = inputs.next()) {
+    input.value.onmidimessage = handleMIDIMessage;
+  }
+  
+  // Fica de olho caso você conecte ou desconecte o teclado com o site já aberto
+  midiAccess.onstatechange = (event) => {
+    if (event.port.type === "input" && event.port.state === "connected") {
+      event.port.onmidimessage = handleMIDIMessage;
+      console.log(`Teclado conectado: ${event.port.name}`);
+    }
+  };
+}
+
+function onMIDIFailure() {
+  console.error("Não foi possível acessar seus dispositivos MIDI.");
+}
+
+function handleMIDIMessage(message) {
+  const command = message.data[0];
+  const note = message.data[1];
+  const velocity = message.data.length > 2 ? message.data[2] : 0; 
+
+  if (command >= 144 && command <= 159) {
+    if (velocity > 0) {
+      onNoteDown(note, velocity);
+    } else {
+      onNoteUp(note);
+    }
+  } else if (command >= 128 && command <= 143) {
+    onNoteUp(note);
+  }
+}
+
 function debugInject(note) {
   midiEvents.push({
     note,
@@ -512,11 +721,72 @@ function resizeCanvases() {
   canvas.height = rollHeight;
   keyboardCanvas.height = keyboardHeight;
 
+  if (!timeline.playing && timeline.currentTime === 0){
+    const timeToFall = canvas.height / PX_PER_MS;
+    timeline.currentTime = -timeToFall;
+  }
+
   redrawUI();
 }
 
-// chamar no início
+// início
 resizeCanvases();
 
-// opcional: se redimensionar a tela
+songNotes.forEach((n) => {
+  n.started = false;
+  n.stopped = false;
+  n.validated = false;
+});
+
+const getBtn = document.getElementById("get");
+const midiInput = document.getElementById("midiInput");
+
+getBtn.addEventListener("click", () => {
+  midiInput.click();
+});
+
+midiInput.addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  timeline.playing = false;
+  playPauseBtn.textContent = "▶";
+
+  const reader = new FileReader();
+  
+  reader.onload = async function(event) {
+    const midiData = new Midi(event.target.result);
+    
+    songNotes.length = 0;
+
+    midiData.tracks.forEach((track) => {
+      track.notes.forEach(note => {
+        songNotes.push({
+          midi: note.midi,
+          start: note.time * 1000, 
+          end: (note.time + note.duration) * 1000,
+          hand: note.midi < 60 ? "left" : "right", 
+          started: false,
+          stopped: false,
+          validated: false
+        });
+      });
+    });
+
+    songNotes.sort((a, b) => a.start - b.start);
+
+    // Reseta o estado do jogo
+    timeline.currentTime = 0;
+    expectedNotes.clear();
+    waitingForUser = false;
+    
+    resizeCanvases(); 
+    
+    console.log("Música carregada com sucesso! Total de notas:", songNotes.length);
+  };
+
+  reader.readAsArrayBuffer(file);
+});
+
+requestAnimationFrame(update);
 window.addEventListener("resize", resizeCanvases);

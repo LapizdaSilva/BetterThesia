@@ -1,15 +1,3 @@
-.botaoCentro {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 8px;
-}
-
-.botaoArquivo {
-  margin-left: 30px;
-}
-
 #topbar {
   height: 53px;
   width: 100%;
@@ -56,4 +44,22 @@ canvas {
   width: 100%;
   height: 160px;
   display: block;
+}
+
+.botaoCentro {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+}
+
+.botaoArquivo {
+  margin-left: 30px;
+}
+
+#config{
+  margin-left: 1300px;
+  width: auto !important;
+  padding: 0 10px;
 }

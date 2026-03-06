@@ -6,6 +6,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BetterThesia</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tonejs/midi"></script>
+    <script src="https://cdn.jsdelivr.net/npm/soundfont-player/dist/soundfont-player.min.js"></script>
   </head>
 
 
@@ -13,11 +16,16 @@
     <div id="topbar">
       <button id="get" class="botaoArquivo">🡻</button>
 
+      <input type="file" id="midiInput" accept=".mid,.midi" style="display: none;" />
+
       <div class="botaoCentro">
         <button id="rewind">⏮</button>
         <button id="playpause">▶</button>
         <button id="forward">⏭</button>
       </div>
+      
+      <button id="config" class="config">⚙️</button>
+
     </div>
 
     <div id="main">
