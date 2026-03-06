@@ -97,3 +97,7 @@ Como o projeto utiliza apenas arquivos estáticos, é muito simples rodá-lo na 
 [ ] Suporte ao Pedal de Sustain (MIDI CC 64).
 
 [ ] Efeitos visuais (partículas) ao acertar as notas.
+
+--- 
+
+https://github.com/user-attachments/assets/628c1425-b270-4e98-8857-f2cbd55bdbd3
