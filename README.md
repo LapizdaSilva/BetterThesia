@@ -35,7 +35,17 @@ As the project uses just static files, it's very simple to run it on your own ma
 2. Navigate to the project file
 
 3. To ensure that the libraries function correctly, use an extension such as "Live Server" in Vs Code to run the project locally
-    
+
+## Next Steps
+
+[ ] Playback reproduciton rate.
+
+[ ] Option to change zoom scale (note fall velocity).
+
+[ ] Support for pedal ( MIDI CC 64).
+
+[ ] Visual effects when hitting the notes
+
 ## Portuguese Version: 
 # BetterThesia
 
@@ -76,3 +86,14 @@ Como o projeto utiliza apenas arquivos estáticos, é muito simples rodá-lo na 
 2. Navegue até a pasta do projeto:
    
 3. Para garantir que as bibliotecas e o áudio carreguem corretamente, utilize uma extensão como o Live Server no VS Code para rodar o projeto localmente
+
+
+## Próximos Passos
+
+[ ] Controle de velocidade de reprodução (Playback Rate).
+
+[ ] Opção de alterar a escala de zoom (velocidade de queda das notas).
+
+[ ] Suporte ao Pedal de Sustain (MIDI CC 64).
+
+[ ] Efeitos visuais (partículas) ao acertar as notas.
