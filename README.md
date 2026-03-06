@@ -1,5 +1,7 @@
 # BetterThesia
 
+https://github.com/user-attachments/assets/628c1425-b270-4e98-8857-f2cbd55bdbd3
+
 Web interactive application inspired by Synthesia, made to help those who seek free piano appretinceship and midi files playback directly on your browser.
 
 **🔗 [BetterThesia at Netlify](https://willowy-cranachan-0deb13.netlify.app/)**
@@ -47,7 +49,6 @@ As the project uses just static files, it's very simple to run it on your own ma
 [ ] Visual effects when hitting the notes
 
 ## Portuguese Version: 
-# BetterThesia
 
 Uma aplicação web interativa inspirada no Synthesia, criada para ajudar no aprendizado de piano e reprodução de arquivos MIDI direto no navegador. 
 
@@ -99,5 +100,3 @@ Como o projeto utiliza apenas arquivos estáticos, é muito simples rodá-lo na 
 [ ] Efeitos visuais (partículas) ao acertar as notas.
 
 --- 
-
-https://github.com/user-attachments/assets/628c1425-b270-4e98-8857-f2cbd55bdbd3
