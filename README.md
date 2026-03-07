@@ -44,8 +44,6 @@ As the project uses just static files, it's very simple to run it on your own ma
 
 [ ] Option to change zoom scale (note fall velocity).
 
-[ ] Support for pedal ( MIDI CC 64).
-
 [ ] Visual effects when hitting the notes
 
 ## Portuguese Version: 
@@ -94,8 +92,6 @@ Como o projeto utiliza apenas arquivos estáticos, é muito simples rodá-lo na 
 [ ] Controle de velocidade de reprodução (Playback Rate).
 
 [ ] Opção de alterar a escala de zoom (velocidade de queda das notas).
-
-[ ] Suporte ao Pedal de Sustain (MIDI CC 64).
 
 [ ] Efeitos visuais (partículas) ao acertar as notas.
 

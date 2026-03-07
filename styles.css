@@ -1,4 +1,19 @@
+html, body{
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden; 
+  background-color: #1a1a1a; 
+  font-family: sans-serif;
+}
+
+canvas {
+  display: block;
+}
+
 #topbar {
+  box-sizing: border-box;
   height: 53px;
   width: 100%;
   background-color: #2f3a3a;
@@ -59,7 +74,7 @@ canvas {
 }
 
 #config{
-  margin-left: 1300px;
+  margin-left: 850px;
   width: auto !important;
   padding: 0 10px;
 }

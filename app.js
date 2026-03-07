@@ -1,5 +1,9 @@
 let loopRunning = false;
 
+const progressBar = document.getElementById("progressBar");
+let songDuration = 0;
+let isDraggingProgress = false;
+
 let practiceMode = "both";
 // "left" | "right" | "both"
 
@@ -98,6 +102,11 @@ function getKeyByMidi(midi) {
 }
 
 function onNoteDown(note, velocity = 100) {
+  const key = getKeyByMidi(note);
+    if (key) {
+      const explosionColor = key.black ? "#00ffff" : "#aaffff";
+      createParticles(key.x + key.w / 2, explosionColor);
+    }
   activeNotes.set(note, {
     start: timeline.currentTime,
     velocity,
@@ -210,6 +219,43 @@ function drawNotes() {
     ctx2d.fillStyle = note.hand === "left" ? "#ff8888" : "#88ff88";
     ctx2d.fillRect(key.x, topY, key.w, height);
   }
+}
+
+const particles = [];
+
+function createParticles(x, color) {
+  // Cria 15 bolinhas coloridas explodindo do topo do teclado
+  for (let i = 0; i < 15; i++) {
+    particles.push({
+      x: x,
+      y: 0, // A explosão nasce no y=0 do keyboardCanvas (onde a nota bate)
+      vx: (Math.random() - 0.5) * 6, // Velocidade horizontal aleatória
+      vy: Math.random() * -5 - 2,    // Velocidade vertical (pula para cima)
+      life: 1.0,                     // Tempo de vida
+      color: color
+    });
+  }
+}
+
+function drawParticles(ctx) {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    let p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.3;
+    p.life -= 0.04;
+    if (p.life <= 0) {
+      particles.splice(i, 1);
+      continue;
+    }
+
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1.0;
 }
 
 function loadSong(notes) {
@@ -352,20 +398,34 @@ if (navigator.requestMIDIAccess) {
   navigator.requestMIDIAccess().then(sucess, failure);
 }
 
+const speedSlider = document.getElementById("speedSlider");
+const speedValue = document.getElementById("speedValue");
+let playbackRate = 1.0;
+
+speedSlider.addEventListener("input", (e) => {
+  playbackRate = parseFloat(e.target.value);
+  speedValue.textContent = playbackRate.toFixed(1) + "x";
+});
+
 function update(now) {
   if (timeline.playing) {
     const delta = now - timeline.last;
-    timeline.currentTime += delta;
+    timeline.currentTime += delta * playbackRate;
     timeline.last = now;
+
     checkPracticeCollision();
     handleAutoPlayback();
   }
+  if (!isDraggingProgress && songDuration > 0) {
+      progressBar.value = timeline.currentTime;
+    }
 
   ctx2d.clearRect(0, 0, canvas.width, canvas.height);
   drawNotes();
 
   keyboardCtx.clearRect(0, 0, keyboardCanvas.width, keyboardCanvas.height);
   drawKeyboard(keyboardCtx);
+  drawParticles(keyboardCtx);
 
   requestAnimationFrame(update);
 }
@@ -605,13 +665,37 @@ playPauseBtn.addEventListener("click", async () => {
   playPauseBtn.textContent = "⏸";
 });
 
-rewindBtn.addEventListener("click", () => {
-  timeline.currentTime = Math.max(0, timeline.currentTime - 2000);
-});
+function seekTo(targetTimeMs) {
+  stopAllNotes(); 
+  
+  timeline.currentTime = Math.max(0, Math.min(targetTimeMs, songDuration));
 
-forwardBtn.addEventListener("click", () => {
-  timeline.currentTime += 2000;
-});
+  for (const note of songNotes) {
+    if (note.start >= timeline.currentTime) {
+      note.started = false;
+      note.validated = false;
+    }
+    if (note.end >= timeline.currentTime) {
+      note.stopped = false;
+    }
+  }
+
+  if (waitingForUser) {
+    waitingForUser = false;
+    expectedNotes.clear();
+    if (playPauseBtn.textContent === "⏸") {
+      timeline.playing = true;
+      timeline.last = performance.now();
+    }
+  }
+}
+
+function seek(offsetMs) {
+  seekTo(timeline.currentTime + offsetMs);
+}
+
+rewindBtn.addEventListener("click", () => seek(-5000));
+forwardBtn.addEventListener("click", () => seek(5000));
 
 keyboardCanvas.addEventListener("mousedown", (e) => {
   const rect = keyboardCanvas.getBoundingClientRect();
@@ -711,23 +795,20 @@ function debugInject(note) {
 }
 
 function resizeCanvases() {
-  const width = canvas.clientWidth;
-  const rollHeight = canvas.clientHeight;
-  const keyboardHeight = keyboardCanvas.clientHeight;
-
-  canvas.width = width;
-  keyboardCanvas.width = width;
-
-  canvas.height = rollHeight;
+  const topbar = document.getElementById("topbar");
+  const topbarHeight = topbar ? topbar.offsetHeight : 0;
+  
+  const screenWidth = window.innerWidth;
+  canvas.width = screenWidth;
+  keyboardCanvas.width = screenWidth;
+  
+  const keyboardHeight = 150; 
   keyboardCanvas.height = keyboardHeight;
-
-  if (!timeline.playing && timeline.currentTime === 0){
-    const timeToFall = canvas.height / PX_PER_MS;
-    timeline.currentTime = -timeToFall;
-  }
-
-  redrawUI();
+  
+  canvas.height = window.innerHeight - topbarHeight - keyboardHeight;
 }
+
+window.addEventListener("resize", resizeCanvases);
 
 // início
 resizeCanvases();
@@ -736,6 +817,14 @@ songNotes.forEach((n) => {
   n.started = false;
   n.stopped = false;
   n.validated = false;
+});
+
+progressBar.addEventListener("mousedown", () => isDraggingProgress = true);
+
+progressBar.addEventListener("mouseup", () => isDraggingProgress = false);
+
+progressBar.addEventListener("input", (e) => {
+  seekTo(parseFloat(e.target.value));
 });
 
 const getBtn = document.getElementById("get");
@@ -759,13 +848,37 @@ midiInput.addEventListener("change", async (e) => {
     
     songNotes.length = 0;
 
-    midiData.tracks.forEach((track) => {
+    const faixasComNotas = midiData.tracks.filter(track => track.notes.length > 0);
+    
+    let leftTrackIndex = -1; 
+
+    if (faixasComNotas.length >= 2) {
+      const faixasOrdenadas = [...faixasComNotas].sort((a, b) => {
+        const mediaA = a.notes.reduce((soma, n) => soma + n.midi, 0) / a.notes.length;
+        const mediaB = b.notes.reduce((soma, n) => soma + n.midi, 0) / b.notes.length;
+        return mediaA - mediaB;
+      });
+      
+      leftTrackIndex = midiData.tracks.indexOf(faixasOrdenadas[0]);
+    }
+
+    midiData.tracks.forEach((track, index) => {
       track.notes.forEach(note => {
+        
+        let maoDaNota = "right"; 
+
+        if (faixasComNotas.length >= 2) {
+          maoDaNota = (index === leftTrackIndex) ? "left" : "right";
+        } 
+        else {
+          maoDaNota = note.midi < 60 ? "left" : "right";
+        }
+
         songNotes.push({
           midi: note.midi,
           start: note.time * 1000, 
           end: (note.time + note.duration) * 1000,
-          hand: note.midi < 60 ? "left" : "right", 
+          hand: maoDaNota, 
           started: false,
           stopped: false,
           validated: false
@@ -774,6 +887,10 @@ midiInput.addEventListener("change", async (e) => {
     });
 
     songNotes.sort((a, b) => a.start - b.start);
+
+    songDuration = songNotes.length > 0 ? Math.max(...songNotes.map(n => n.end)) : 0;
+    progressBar.max = songDuration;
+    progressBar.value = 0;
 
     // Reseta o estado do jogo
     timeline.currentTime = 0;
