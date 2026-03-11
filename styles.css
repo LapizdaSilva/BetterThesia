@@ -73,8 +73,66 @@ canvas {
   margin-left: 30px;
 }
 
-#config{
-  margin-left: 850px;
+.dropdown {
+  position: relative;
+  display: inline-block;
+  margin-left: auto; 
+  margin-right: 15px;
+}
+
+.dropdown-btn {
+  background-color: #556666;
+  border: none;
+  color: #e0f2f2;
+  font-size: 14px !important;
+  font-weight: bold;
+  padding: 0 15px;
+  height: 40px;
+  border-radius: 6px;
+  cursor: pointer;
   width: auto !important;
-  padding: 0 10px;
+}
+
+.dropdown-btn:hover { background-color: #6f8888; }
+
+.dropdown-content {
+  display: none; 
+  position: absolute;
+  right: 0;
+  top: 45px;
+  background-color: #2f3a3a;
+  min-width: 220px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.5);
+  border-radius: 8px;
+  z-index: 100;
+  padding: 15px;
+  border: 1px solid #556666;
+}
+
+.dropdown-content.show {
+  display: block; 
+}
+
+.config-item {
+  max-width: 180px;
+  margin-bottom: 15px;
+  color: #e0f2f2;
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.config-item:last-child {
+  margin-bottom: 0;
+}
+
+.config-item select, .config-item input {
+  width: 100%;
+  padding: 8px;
+  border-radius: 4px;
+  background: #1e2626;
+  color: #fff;
+  border: 1px solid #556666;
+  cursor: pointer;
 }

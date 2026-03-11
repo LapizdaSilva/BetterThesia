@@ -1,5 +1,10 @@
 let loopRunning = false;
 
+let isSustainDown = false;
+const keysPhysicallyPressed = new Set();
+
+const keysAlreadyUsed = new Set()
+
 const progressBar = document.getElementById("progressBar");
 let songDuration = 0;
 let isDraggingProgress = false;
@@ -102,24 +107,38 @@ function getKeyByMidi(midi) {
 }
 
 function onNoteDown(note, velocity = 100) {
+  keysAlreadyUsed.delete(note);
+
   const key = getKeyByMidi(note);
-    if (key) {
-      const explosionColor = key.black ? "#00ffff" : "#aaffff";
-      createParticles(key.x + key.w / 2, explosionColor);
-    }
+  
   activeNotes.set(note, {
     start: timeline.currentTime,
     velocity,
   });
 
   highlightKey(note, true);
-  noteOn(note, velocity);
+  noteOn(note, velocity); // Toca o som
 
-  if (waitingForUser && expectedNotes.has(note)) {
-    expectedNotes.clear();
-    waitingForUser = false;
-    timeline.playing = true;
-    timeline.last = performance.now(); 
+  if (waitingForUser) {
+    if (expectedNotes.has(note)) {
+      expectedNotes.delete(note);
+      keysAlreadyUsed.add(note);
+
+      registerHit();
+
+      const explosionColor = key.black ? "#00ffff" : "#aaffff";
+      createParticles(key.x + key.w / 2, explosionColor);
+
+      if (expectedNotes.size === 0) {
+        waitingForUser = false;
+        timeline.playing = true;
+        timeline.last = performance.now();
+      }
+    } else {
+      combo = 0;
+      scoreMultiplier = 1;
+      updateScoreUI();
+    }
   }
 }
 
@@ -134,6 +153,9 @@ function onNoteUp(note) {
   if (event) {
     event.end = timeline.currentTime;
   }
+  keysPhysicallyPressed.delete(note);
+
+  keysAlreadyUsed.delete(now);
 }
 
 function stopAllNotes() {
@@ -150,13 +172,6 @@ function stopAllNotes() {
       highlightKey(note.midi, false);
     }
   }
-}
-
-function cleanupEvents() {
-  midiEvents.splice(
-    0,
-    midiEvents.findIndex((n) => timeline.currentTime - n.end < CLEANUP_TIME),
-  );
 }
 
 function createKeyboard(containerId, startMidi = 36, keyCount = 61) {
@@ -176,22 +191,6 @@ function createKeyboard(containerId, startMidi = 36, keyCount = 61) {
 }
 
 // Notas
-
-function simulateNote(note, duration = 500, velocity = 100) {
-  if (!timeline.playing) return;
-
-  // note on
-  handleInput({
-    data: [144, note, velocity],
-  });
-
-  // note off
-  setTimeout(() => {
-    handleInput({
-      data: [128, note, 0],
-    });
-  }, duration);
-}
 
 function demoSequence() {
   const notes = [61, 60, 62, 64, 67, 69];
@@ -224,14 +223,13 @@ function drawNotes() {
 const particles = [];
 
 function createParticles(x, color) {
-  // Cria 15 bolinhas coloridas explodindo do topo do teclado
-  for (let i = 0; i < 15; i++) {
+  for (let i = 0; i < 13; i++) {
     particles.push({
       x: x,
-      y: 0, // A explosão nasce no y=0 do keyboardCanvas (onde a nota bate)
+      y: 0, // A explosão nasce no y=0 do keyboardCanvas onde a nota bate
       vx: (Math.random() - 0.5) * 6, // Velocidade horizontal aleatória
-      vy: Math.random() * -5 - 2,    // Velocidade vertical (pula para cima)
-      life: 1.0,                     // Tempo de vida
+      vy: Math.random() * -5 - 2,    // Velocidade vertical
+      life: 1.5,                     // Tempo de vida
       color: color
     });
   }
@@ -368,19 +366,6 @@ function drawKeyboard(ctx) {
   }
 }
 
-function buildExpectedChords(notes) {
-  const map = new Map();
-
-  for (const n of notes) {
-    if (!map.has(n.start)) {
-      map.set(n.start, { time: n.start, notes: new Set(), hand: n.hand });
-    }
-    map.get(n.start).notes.add(n.midi);
-  }
-
-  return [...map.values()];
-}
-
 window.AudioContext = window.AudioContext || window.webkitAudioContext; // Safari compatibilidade
 // const audioContext = new AudioContext();
 // console.log(audioContext);
@@ -388,15 +373,6 @@ let ctx;
 //console.log(ctx)
 
 const oscillators = {};
-
-function midiToFrequency(number) {
-  const a = 440;
-  return 440 * Math.pow(2, (number - 69) / 12);
-}
-
-if (navigator.requestMIDIAccess) {
-  navigator.requestMIDIAccess().then(sucess, failure);
-}
 
 const speedSlider = document.getElementById("speedSlider");
 const speedValue = document.getElementById("speedValue");
@@ -415,6 +391,11 @@ function update(now) {
 
     checkPracticeCollision();
     handleAutoPlayback();
+
+    if (songDuration > 0 && timeline.currentTime >= songDuration) {
+      endGame();
+      return;
+    }
   }
   if (!isDraggingProgress && songDuration > 0) {
       progressBar.value = timeline.currentTime;
@@ -430,54 +411,36 @@ function update(now) {
   requestAnimationFrame(update);
 }
 
-function sucess(midiAccess) {
-  midiAccess.addEventListener("statechange", updateDevices);
-  // console.log(midiAccess);
-
-  const inputs = midiAccess.inputs;
-  // console.log(inputs);
-
-  inputs.forEach((input) => {
-    input.addEventListener("midimessage", handleInput);
-  });
-}
-
 function handleInput(e) {
-  if (!timeline.playing) return;
-
-  const [command, note, velocity] = e.data;
+  const [command, noteOrCC, velocityOrValue] = e.data;
   const time = timeline.currentTime;
+  const messageType = command >> 4;
 
-  if (command === 144 && velocity > 0) {
-    midiEvents.push({
-      note,
-      velocity,
-      start: time,
-      end: null,
-      hand: note < 60 ? "left" : "right",
-      started: false,
-      stopped: false,
-    });
-  }
+  if (messageType === 9 && velocityOrValue > 0) {
+    if (timeline.playing) {
+      midiEvents.push({
+        note: noteOrCC, velocity: velocityOrValue, start: time, end: null,
+        hand: noteOrCC < 60 ? "left" : "right", started: false, stopped: false,
+      });
+    }
+    
+    onNoteDown(noteOrCC, velocityOrValue);
 
-  if (command === 128 || (command === 144 && velocity === 0)) {
-    const last = [...midiEvents]
-      .reverse()
-      .find((n) => n.note === note && n.end === null);
+  } else if (messageType === 8 || (messageType === 9 && velocityOrValue === 0)) {
+    if (timeline.playing) {
+      const last = [...midiEvents].reverse().find((n) => n.note === noteOrCC && n.end === null);
+      if (last) last.end = time;
+    }
+    
+    onNoteUp(noteOrCC);
 
-    if (last) last.end = time;
-  }
+  } else if (messageType === 11) {
 
-  if (waitingForUser && expectedNotes.has(note)) {
-    expectedNotes.delete(note);
-    highlightKey(note, true);
-    noteOn(note, velocity);
-
-    if (expectedNotes.size === 0) {
-      waitingForUser = false;
-      timeline.playing = true;
-      timeline.last = performance.now();
-      requestAnimationFrame(update);
+    if (noteOrCC === 64) {
+      isSustainDown = velocityOrValue >= 64;
+      if (!isSustainDown) {
+        releaseSustainedNotes();
+      }
     }
   }
 }
@@ -502,8 +465,15 @@ function checkPracticeCollision() {
 
 
       for (const expectedMidi of expectedNotes) {
-        if (activeNotes.has(expectedMidi)) {
+        if (activeNotes.has(expectedMidi) && !keysAlreadyUsed.has(expectedMidi)) {
+          
           expectedNotes.delete(expectedMidi);
+          keysAlreadyUsed.add(expectedMidi);
+          registerHit();
+          
+          //garante que mesmo sem pausar aumente a pontuação
+          scoreHits++;
+          scoreDisplay.textContent = scoreHits + " Acertos";
         }
       }
 
@@ -522,6 +492,10 @@ function stopTimelineAndPrepare(exactStartTime) {
   timeline.playing = false;
   waitingForUser = true;
   timeline.currentTime = exactStartTime;
+
+  combo = 0;
+  scoreMultiplier = 1;
+  updateScoreUI();
 }
 
 function handleAutoPlayback() {
@@ -553,6 +527,9 @@ const activeAudioNodes = {};
 
 function noteOn(note, velocity) {
   if (!ctx) return;
+  
+  // Registra que o dedo está na tecla
+  keysPhysicallyPressed.add(note); 
 
   if (activeAudioNodes[note]) {
     activeAudioNodes[note].stop();
@@ -560,69 +537,103 @@ function noteOn(note, velocity) {
   }
 
   if (pianoInstrument) {
-    const vol = (velocity / 127) * 2.0; 
-    
+    const vol = (velocity / 127) * 2.0;
     const audioNode = pianoInstrument.play(note, ctx.currentTime, {
       gain: vol,
       duration: 999 
     });
-    
     activeAudioNodes[note] = audioNode;
-  } else {
   }
 }
 
 function noteOff(note) {
-  if (activeAudioNodes[note]) {
-    activeAudioNodes[note].stop(ctx.currentTime + 0.1); 
-    delete activeAudioNodes[note];
+  keysPhysicallyPressed.delete(note); 
+
+  if (!isSustainDown) {
+    if (activeAudioNodes[note]) {
+      activeAudioNodes[note].stop(ctx.currentTime + 0.1);
+      delete activeAudioNodes[note];
+    }
   }
 }
 
-function updateDevices(event) {
-  console.log(event);
-  console.log(
-    `name: ${event.port.name}, Brand: ${event.port.manufacturer}, Type: ${event.port.type}, State: ${event.port.state}`,
-  );
+function releaseSustainedNotes() {
+  for (const note in activeAudioNodes) {
+    if (!keysPhysicallyPressed.has(parseInt(note))) {
+      activeAudioNodes[note].stop(ctx.currentTime + 0.1);
+      delete activeAudioNodes[note];
+    }
+  }
 }
 
+const configBtn = document.getElementById("configBtn");
+const configMenu = document.getElementById("configMenu");
+const modeSelect = document.getElementById("modeSelect");
+const scoreDisplay = document.getElementById("scoreDisplay");
 
-const configBtn = document.getElementById("config");
+let scoreHits = 0;
+let maxComboThisSong = 0;
+let combo = 0;
+let scoreMultiplier = 1;
 
-// Lista de modos que o jogo possui
-const modes = [
-  { id: "both", label: "⚙️ Prática" }, // nenhuma nota vai ser tocada sozinha
-  { id: "right", label: "⚙️ Mão Dir." }, // toca só as notas da mão direita
-  { id: "left", label: "⚙️ Mão Esq." }, // toca só as notas da mão esquerda
-  { id: "off", label: "⚙️ Auto Play" } // joga sozinho
-];
-let currentModeIndex = 0;
+const comboDisplay = document.getElementById("comboDisplay");
+
+function registerHit() {
+  combo++;
+  
+  if (combo > maxComboThisSong) maxComboThisSong = combo;
+  if (combo >= 30) scoreMultiplier = 4;
+  else if (combo >= 20) scoreMultiplier = 3;
+  else if (combo >= 10) scoreMultiplier = 2;
+  else scoreMultiplier = 1;
+
+  scoreHits += (10 * scoreMultiplier); // Cada nota base vale 10 pontos
+  updateScoreUI();
+}
+
+function updateScoreUI() {
+  scoreDisplay.textContent = scoreHits + " Pontos";
+  
+  if (combo >= 10) {
+    comboDisplay.style.display = "inline";
+    comboDisplay.textContent = `🔥 ${combo} Combo (x${scoreMultiplier})`;
+  } else {
+    comboDisplay.style.display = "none";
+  }
+}
+
+function resetScore() {
+  scoreHits = 0;
+  combo = 0;
+  scoreMultiplier = 1;
+  maxComboThisSong = 0;
+  updateScoreUI();
+}
 
 configBtn.addEventListener("click", () => {
-  currentModeIndex = (currentModeIndex + 1) % modes.length;
-  
-  const selectedMode = modes[currentModeIndex];
-  practiceMode = selectedMode.id;
-  configBtn.textContent = selectedMode.label;
+  configMenu.classList.toggle("show");
+});
 
+window.addEventListener("click", (e) => {
+  if (!e.target.closest('.dropdown')) {
+    if (configMenu.classList.contains('show')) {
+      configMenu.classList.remove('show');
+    }
+  }
+});
+
+modeSelect.addEventListener("change", (e) => {
+  practiceMode = e.target.value;
+  
   if (practiceMode === "off" && waitingForUser) {
     waitingForUser = false;
     expectedNotes.clear();
     if (playPauseBtn.textContent === "⏸") {
       timeline.playing = true;
       timeline.last = performance.now();
-
-      if (!timeline.playing){
-        stopAllNotes();
-      }
     }
   }
 });
-
-
-function failure() {
-  console.log("Failed to access MIDI");
-}
 
 playPauseBtn.addEventListener("click", async () => {
   if (!ctx) ctx = new AudioContext();
@@ -739,47 +750,26 @@ function getKeyAtPosition(x, y) {
 }
 
 if (navigator.requestMIDIAccess) {
-  navigator.requestMIDIAccess().then(onMIDISuccess, onMIDIFailure);
+  navigator.requestMIDIAccess().then(
+    (midiAccess) => {
+      console.log("🎹 Acesso MIDI concedido!");
+      
+      const inputs = midiAccess.inputs.values();
+      for (let input = inputs.next(); input && !input.done; input = inputs.next()) {
+        input.value.onmidimessage = handleInput; // Direciona tudo para o handleInput
+      }
+      
+      midiAccess.onstatechange = (event) => {
+        if (event.port.type === "input" && event.port.state === "connected") {
+          event.port.onmidimessage = handleInput;
+          console.log(`Teclado conectado: ${event.port.name}`);
+        }
+      };
+    },
+    () => console.error("Não foi possível acessar seus dispositivos MIDI.")
+  );
 } else {
   console.warn("Seu navegador não suporta Web MIDI API.");
-}
-
-function onMIDISuccess(midiAccess) {
-  console.log("🎹 Acesso MIDI concedido e procurando teclados...");
-  
-  // Conecta em todos os teclados que já estão plugados no USB
-  const inputs = midiAccess.inputs.values();
-  for (let input = inputs.next(); input && !input.done; input = inputs.next()) {
-    input.value.onmidimessage = handleMIDIMessage;
-  }
-  
-  // Fica de olho caso você conecte ou desconecte o teclado com o site já aberto
-  midiAccess.onstatechange = (event) => {
-    if (event.port.type === "input" && event.port.state === "connected") {
-      event.port.onmidimessage = handleMIDIMessage;
-      console.log(`Teclado conectado: ${event.port.name}`);
-    }
-  };
-}
-
-function onMIDIFailure() {
-  console.error("Não foi possível acessar seus dispositivos MIDI.");
-}
-
-function handleMIDIMessage(message) {
-  const command = message.data[0];
-  const note = message.data[1];
-  const velocity = message.data.length > 2 ? message.data[2] : 0; 
-
-  if (command >= 144 && command <= 159) {
-    if (velocity > 0) {
-      onNoteDown(note, velocity);
-    } else {
-      onNoteUp(note);
-    }
-  } else if (command >= 128 && command <= 143) {
-    onNoteUp(note);
-  }
 }
 
 function debugInject(note) {
@@ -801,7 +791,7 @@ function resizeCanvases() {
   const screenWidth = window.innerWidth;
   canvas.width = screenWidth;
   keyboardCanvas.width = screenWidth;
-  
+    
   const keyboardHeight = 150; 
   keyboardCanvas.height = keyboardHeight;
   
@@ -810,8 +800,6 @@ function resizeCanvases() {
 
 window.addEventListener("resize", resizeCanvases);
 
-// início
-resizeCanvases();
 
 songNotes.forEach((n) => {
   n.started = false;
@@ -837,6 +825,8 @@ getBtn.addEventListener("click", () => {
 midiInput.addEventListener("change", async (e) => {
   const file = e.target.files[0];
   if (!file) return;
+
+  document.getElementById("songNameDisplay").textContent = file.name;
 
   timeline.playing = false;
   playPauseBtn.textContent = "▶";
@@ -892,12 +882,12 @@ midiInput.addEventListener("change", async (e) => {
     progressBar.max = songDuration;
     progressBar.value = 0;
 
-    // Reseta o estado do jogo
     timeline.currentTime = 0;
     expectedNotes.clear();
     waitingForUser = false;
     
-    resizeCanvases(); 
+    resizeCanvases();
+    resetScore();
     
     console.log("Música carregada com sucesso! Total de notas:", songNotes.length);
   };
@@ -905,5 +895,56 @@ midiInput.addEventListener("change", async (e) => {
   reader.readAsArrayBuffer(file);
 });
 
+window.addEventListener("keydown", (e) => {
+  if (e.code === "Space") {
+    e.preventDefault();
+    playPauseBtn.click();
+  }
+});
+
+
+const gameOverScreen = document.getElementById("gameOverScreen");
+const restartBtn = document.getElementById("restartBtn");
+
+function endGame() {
+  timeline.playing = false;
+  playPauseBtn.textContent = "▶";
+  stopAllNotes();
+
+  // Pega o nome da música atual para salvar o recorde separado por música
+  const songName = document.getElementById("songNameDisplay").textContent;
+  
+  // Verifica se já existe um recorde salvo para esta música
+  let highScore = localStorage.getItem("highScore_" + songName) || 0;
+  highScore = parseInt(highScore);
+
+    // Atualiza o recorde caso a pontuação atual seja maior
+  if (scoreHits > highScore) {
+    highScore = scoreHits;
+    localStorage.setItem("highScore_" + songName, highScore);
+  }
+
+  // Preenche os textos
+  document.getElementById("finalScore").textContent = scoreHits;
+  document.getElementById("maxCombo").textContent = maxComboThisSong;
+  document.getElementById("highScoreDisplay").textContent = highScore;
+
+  // Mostra a tela
+  gameOverScreen.style.display = "flex";
+}
+
+// Tocar novamente
+restartBtn.addEventListener("click", () => {
+  gameOverScreen.style.display = "none";
+  seekTo(0);
+  timeline.playing = true;
+  playPauseBtn.textContent = "⏸";
+  timeline.last = performance.now();
+});
+
 requestAnimationFrame(update);
 window.addEventListener("resize", resizeCanvases);
+
+
+// início
+resizeCanvases();

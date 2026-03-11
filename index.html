@@ -15,8 +15,14 @@
   <body style="margin: 0; background-color: #4f5b5b">
     <div id="topbar">
       <button id="get" class="botaoArquivo">🡻</button>
-
       <input type="file" id="midiInput" accept=".mid,.midi" style="display: none;" />
+
+      <select id="songSelect" style="background: #556666; color: #e0f2f2; border: none; border-radius: 6px; height: 40px; margin-left: 10px; padding: 0 10px; cursor: pointer;">
+        <option value="">Escolher música...</option>
+        <option value="./Midis/A Thousand Miles.mid">A Thousand Miles</option>
+        <option value="./Midis/nocturne.mid">Nocturne</option>
+        <option value="./Midis/Experience.mid">Experience</option>
+      </select>
 
       <div class="botaoCentro">
         <button id="rewind">⏮</button>
@@ -24,23 +30,75 @@
         <button id="forward">⏭</button>
       </div>
 
-      <div style="flex-grow: 1; margin: 0 15px; display: flex; align-items: center;">
+      <div style="color: #00ffff; font-weight: bold; margin: 0 15px; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px;">
+        🎵 <span id="songNameDisplay">Nenhuma música</span>
+      </div>
+
+      <div style="flex-grow: 1; max-width: 240px; margin: 0 auto 0 15px; display: flex; align-items: center;">
         <input type="range" id="progressBar" min="0" value="0" step="1" style="width: 100%; cursor: pointer;" />
       </div>
       
-      <button id="config" class="config">⚙️</button>
-
-      <div style="display: flex; align-items: center; gap: 5px; color: #e0f2f2; margin-left: 15px;">
-        <span style="font-size: 14px;">Velocidade:</span>
-        <input type="range" id="speedSlider" min="0.2" max="2.0" step="0.1" value="1.0" style="width: 80px;" />
-        <span id="speedValue" style="font-size: 14px; width: 35px;">1.0x</span>
+      <div style="color: #ffdd00; font-weight: bold; margin: 0 15px; font-size: 16px; display: flex; align-items: center;">
+        ⭐ <span id="scoreDisplay" style="margin-left: 5px;">0 Pontos</span>
+        <span id="comboDisplay" style="margin-left: 15px; color: #ff55aa; font-size: 18px; display: none; text-shadow: 0 0 5px #ff55aa;">🔥 x1</span>
       </div>
+
+      <div class="dropdown">
+        <button id="configBtn" class="dropdown-btn">⚙️ Ajustes</button>
+        <div id="configMenu" class="dropdown-content">
+
+          <div class="config-item">
+            <label>Modo de Prática:</label>
+            <select id="modeSelect">
+              <option value="both">🎹 Prática (Ambas)</option>
+              <option value="right">🎹 Mão Direita</option>
+              <option value="left">🎹 Mão Esquerda</option>
+              <option value="off">🤖 Auto Play</option>
+            </select>
+          </div>
+
+          <div class="config-item">
+            <label>Velocidade: <span id="speedValue">1.0x</span></label>
+            <input type="range" id="speedSlider" min="0.2" max="2.0" step="0.1" value="1.0" />
+          </div>
+
+          <div style="margin-bottom: 10px;">
+            <label style="display: block; font-size: 12px; margin-bottom: 5px;">Tamanho do Teclado:</label>
+            <select id="keyboardSize" style="width: 100%; padding: 5px; background: #3a4747; color: white; border: 1px solid #556666; border-radius: 4px;">
+              <option value="61" selected>61 Teclas (Padrão)</option>
+              <option value="76">76 Teclas</option>
+              <option value="88">88 Teclas (Piano Completo)</option>
+            </select>
+          </div>
+
+        </div>
+      </div>
+      
     </div>
 
     <div id="main">
       <canvas id="roll"></canvas>
       <canvas id="keyboard"></canvas>
     </div>
-    <script src="./app.js"></script>
+
+        <div id="gameOverScreen" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 1000; flex-direction: column; justify-content: center; align-items: center; color: white; font-family: sans-serif;">
+      
+      <h1 style="color: #00ffff; font-size: 40px; margin-bottom: 10px;">Música Concluída! 🎵</h1>
+      
+      <div style="background: #2f3a3a; padding: 30px; border-radius: 10px; text-align: center; border: 2px solid #556666; margin-bottom: 20px;">
+        <p style="font-size: 24px; margin: 10px 0;">Pontuação Final: <strong id="finalScore" style="color: #ffdd00;">0</strong></p>
+        <p style="font-size: 20px; margin: 10px 0;">Maior Combo: <strong id="maxCombo">0</strong> 🔥</p>
+        <hr style="border-color: #556666; margin: 15px 0;">
+        <p style="font-size: 18px; margin: 10px 0;">Recorde (High Score): <strong id="highScoreDisplay" style="color: #88ff88;">0</strong></p>
+      </div>
+
+      <button id="restartBtn" style="background-color: #00cccc; color: #111; border: none; padding: 15px 30px; font-size: 20px; font-weight: bold; border-radius: 8px; cursor: pointer;">Tocar Novamente</button>
+    </div>
+
+    <script src="./globals.js"></script>
+    <script src="./audio.js"></script>
+    <script src="./graphics.js"></script>
+    <script src="./main.js"></script>
+
   </body>
 </html>
