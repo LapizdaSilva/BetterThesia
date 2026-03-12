@@ -53,7 +53,12 @@ function drawNotes() {
 
     if (bottomY < 0 || topY > canvas.height) continue;
 
-    ctx2d.fillStyle = note.hand === "left" ? "#ff8888" : "#88ff88";
+    if (note.hand === "left") {
+      ctx2d.fillStyle = key.black ? "#cc3333" : "#ff8888"; 
+    } else {
+      ctx2d.fillStyle = key.black ? "#33cc33" : "#88ff88"; 
+    }
+
     ctx2d.fillRect(key.x, topY, key.w, height);
   }
 }

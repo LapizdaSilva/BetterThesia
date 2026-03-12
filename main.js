@@ -50,7 +50,6 @@ function onNoteUp(note) {
   keysAlreadyUsed.delete(note);
 }
 
-// --- LÓGICA DE COLISÃO E AUTO-PLAY ---
 function checkPracticeCollision() {
   if (practiceMode === "off" || waitingForUser) return;
 
@@ -112,7 +111,6 @@ function handleAutoPlayback() {
   }
 }
 
-// --- SISTEMA DE PONTUAÇÃO ---
 function registerHit() {
   combo++;
   if (combo > maxComboThisSong) maxComboThisSong = combo;
@@ -164,11 +162,20 @@ function endGame() {
   gameOverScreen.style.display = "flex";
 }
 
-// --- EVENTOS DE INTERFACE E CONTROLES (UI) ---
 speedSlider.addEventListener("input", (e) => {
   playbackRate = parseFloat(e.target.value);
   speedValue.textContent = playbackRate.toFixed(1) + "x";
+
+  localStorage.setItem("betterThesia_speed", playbackRate);
 });
+const savedSpeed = localStorage.getItem("betterThesia_speed");
+
+if (savedSpeed) {
+  playbackRate = parseFloat(savedSpeed);
+  speedSlider.value = playbackRate;
+  speedValue.textContent = playbackRate.toFixed(1) + "x";
+}
+
 
 configBtn.addEventListener("click", () => configMenu.classList.toggle("show"));
 
@@ -180,6 +187,7 @@ window.addEventListener("click", (e) => {
 
 modeSelect.addEventListener("change", (e) => {
   practiceMode = e.target.value;
+  localStorage.setItem("betterThesia_practiceMode", practiceMode)
   if (practiceMode === "off" && waitingForUser) {
     waitingForUser = false;
     expectedNotes.clear();
@@ -187,12 +195,27 @@ modeSelect.addEventListener("change", (e) => {
   }
 });
 
+const savedPracticeMode = localStorage.getItem("betterThesia_practiceMode");
+if (savedPracticeMode) {
+  practiceMode = savedPracticeMode;
+  modeSelect.value = practiceMode;
+};
 
 document.getElementById("keyboardSize").addEventListener("change", (e) => {
   const newSize = parseInt(e.target.value);
   buildKeyboard(newSize);
-  resizeCanvases();       // Redesenha a tela
+  resizeCanvases();
+
+  localStorage.setItem("betterThesia_keyboardSize", newSize);
 });
+const savedSize = localStorage.getItem("betterThesia_keyboardSize");
+
+if (savedSize) {
+  const sizeInt = parseInt(savedSize);
+  document.getElementById("keyboardSize").value = sizeInt;
+  
+  buildKeyboard(sizeInt);
+}
 
 document.getElementById("songSelect").addEventListener("change", async (e) => {
   const url = e.target.value;
@@ -401,7 +424,7 @@ restartBtn.addEventListener("click", () => {
   expectedNotes.clear();
   waitingForUser = false;
   
-  // 3. Reseta os combos e a pontuação
+  // Reseta os combos e a pontuação
   if (typeof resetScore === "function") resetScore();
 
   seekTo(0);

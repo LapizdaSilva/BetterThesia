@@ -1,5 +1,3 @@
-// === globals.js (ESTADO DO JOGO E VARIÁVEIS COMPARTILHADAS) ===
-
 let isSustainDown = false;
 const keysPhysicallyPressed = new Set();
 const keysAlreadyUsed = new Set();
@@ -15,16 +13,14 @@ const midiEvents = [];
 const activeNotes = new Map();
 const songNotes = [];
 
-// Pontuação e Combos
 let scoreHits = 0;
 let maxComboThisSong = 0;
 let combo = 0;
 let scoreMultiplier = 1;
 let playbackRate = 1.0;
 
-// --- ELEMENTOS HTML (DOM) ---
 const progressBar = document.getElementById("progressBar");
-const playPauseBtn = document.getElementById("playpause"); // ID está minúsculo no HTML
+const playPauseBtn = document.getElementById("playpause"); 
 const rewindBtn = document.getElementById("rewind");
 const forwardBtn = document.getElementById("forward");
 const canvas = document.getElementById("roll");
@@ -43,6 +39,5 @@ const comboDisplay = document.getElementById("comboDisplay");
 const gameOverScreen = document.getElementById("gameOverScreen");
 const restartBtn = document.getElementById("restartBtn");
 
-// Estes dois costumam ser os maiores culpados por esse erro:
-const getBtn = document.getElementById("get"); // No HTML o ID é só "get"
+const getBtn = document.getElementById("get");
 const midiInput = document.getElementById("midiInput");
