@@ -86,13 +86,3 @@ Como o projeto utiliza apenas arquivos estáticos, é muito simples rodá-lo na 
    
 3. Para garantir que as bibliotecas e o áudio carreguem corretamente, utilize uma extensão como o Live Server no VS Code para rodar o projeto localmente
 
-
-## Próximos Passos
-
-[ ] Controle de velocidade de reprodução (Playback Rate).
-
-[ ] Opção de alterar a escala de zoom (velocidade de queda das notas).
-
-[ ] Efeitos visuais (partículas) ao acertar as notas.
-
---- 
