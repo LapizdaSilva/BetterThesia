@@ -41,3 +41,35 @@ const restartBtn = document.getElementById("restartBtn");
 
 const getBtn = document.getElementById("get");
 const midiInput = document.getElementById("midiInput");
+
+const pcKeyboardMap = {
+  // 1ª Oitava (Linha Z-M para teclas brancas, A-K para pretas)
+  'z': 64, // E4 (Branca)
+  'x': 65, // F4 (Branca)
+  'g': 66, // F#4 (Preta)
+  'c': 67, // G4 (Branca)
+  'h': 68, // G#4 (Preta)
+  'v': 69, // A4 (Branca)
+  'j': 70, // A#4 (Preta)
+  'b': 71, // B4 (Branca)
+  'n': 72, // C5 (Branca)
+  's': 73, // C#5 (Preta)
+  'm': 74, // D5 (Branca)
+  'd': 75, // D#5 (Preta)
+  
+  // 2ª Oitava (Linha Q-I para brancas, 2-8 para pretas)
+  'q': 76, // E5 (Repetida para facilitar a troca de mão)
+  'w': 77, // F5 (Branca)
+  '5': 78, // F#5 (Preta)
+  'e': 79, // G5 (Branca)
+  '6': 80, // G#5 (Preta)
+  'r': 81, // A5 (Branca)
+  '7': 82, // A#5 (Preta)
+  't': 83, // B5 (Branca)
+  'y': 84, // C6 (Branca)
+  '2': 85, // C#6 (Preta)
+  'u': 86, // D6 (Branca)
+  '3': 87, // D#6 (Preta)
+};
+
+const pressedPcKeys = new Set();

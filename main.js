@@ -174,7 +174,7 @@ function endGame() {
   finalRankElement.textContent = rankStr;
   finalRankElement.style.color = rankColor;
 
-  const songName = document.getElementById("songNameDisplay").textContent;
+  const songName = setSongName(file.name);
   let highScore = localStorage.getItem("highScore_" + songName) || 0;
   highScore = parseInt(highScore);
 
@@ -251,7 +251,7 @@ document.getElementById("songSelect").addEventListener("change", async (e) => {
   const url = e.target.value;
   if (!url) return;
   const songName = e.target.options[e.target.selectedIndex].text;
-  document.getElementById("songNameDisplay").textContent = songName;
+  setSongName(file.name);
   
   timeline.playing = false;
   playPauseBtn.textContent = "▶";
@@ -314,6 +314,22 @@ function seekTo(targetTimeMs) {
   }
 }
 
+function setSongName(newName) {
+  const nameDisplay = document.getElementById("songNameDisplay");
+  const windowContainer = nameDisplay.parentElement;
+
+  nameDisplay.textContent = newName;
+
+  // Remove a classe de animação provisoriamente para conseguir medir o tamanho real da palavra
+  nameDisplay.classList.remove("scrolling-text");
+
+  // Verifica se o texto é maior que a caixinha
+  if (nameDisplay.scrollWidth > windowContainer.clientWidth) {
+    // Se não couber, adiciona a classe que faz ele deslizar
+    nameDisplay.classList.add("scrolling-text");
+  }
+}
+
 function seek(offsetMs) { seekTo(timeline.currentTime + offsetMs); }
 rewindBtn.addEventListener("click", () => seek(-5000));
 forwardBtn.addEventListener("click", () => seek(5000));
@@ -337,7 +353,7 @@ midiInput.addEventListener("change", async (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
-  document.getElementById("songNameDisplay").textContent = file.name;
+  setSongName(file.name);
   timeline.playing = false;
   playPauseBtn.textContent = "▶";
 
@@ -439,7 +455,39 @@ if (navigator.requestMIDIAccess) {
   );
 }
 
-window.addEventListener("keydown", (e) => { if (e.code === "Space") { e.preventDefault(); playPauseBtn.click(); } });
+window.addEventListener("keydown", (e) => { 
+  if (e.code === "Space") { 
+    e.preventDefault(); 
+    playPauseBtn.click(); 
+    return;
+  }
+
+  // Ignora se o utilizador estiver apenas a segurar a tecla
+  if (e.repeat) return;
+
+  // Só ativa o teclado do PC se o teclado na tela for o de 24 teclas
+  if (KEY_COUNT === 24) {
+    const midiNote = pcKeyboardMap[e.key.toLowerCase()];
+    
+    if (midiNote) {
+      pressedPcKeys.add(e.key.toLowerCase());
+      // Chama a função exata que o teclado MIDI chamaria
+      onNoteDown(midiNote, 80); 
+    }
+  }
+});
+
+window.addEventListener("keyup", (e) => {
+  if (KEY_COUNT === 24) {
+    const key = e.key.toLowerCase();
+    const midiNote = pcKeyboardMap[key];
+    
+    if (midiNote && pressedPcKeys.has(key)) {
+      pressedPcKeys.delete(key);
+      onNoteUp(midiNote);
+    }
+  }
+});
 
 restartBtn.addEventListener("click", () => {
   gameOverScreen.style.display = "none";

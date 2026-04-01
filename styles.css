@@ -136,3 +136,34 @@ canvas {
   border: 1px solid #556666;
   cursor: pointer;
 }
+
+.song-marquee-container {
+  display: flex;
+  align-items: center;
+  color: #00ffff;
+  font-weight: bold;
+  margin: 0 15px;
+  font-size: 14px;
+}
+
+.marquee-window {
+  width: 150px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* O texto que vai deslizar */
+#songNameDisplay {
+  display: inline-block;
+}
+
+/* Adiciona essa animação caso precise */
+.scrolling-text { 
+  padding-left: 100%;
+  animation: scroll-text 8s linear infinite;
+}
+
+@keyframes scroll-text {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}

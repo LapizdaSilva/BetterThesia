@@ -31,8 +31,11 @@
         <button id="forward">⏭</button>
       </div>
 
-      <div style="color: #00ffff; font-weight: bold; margin: 0 15px; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px;">
-        🎵 <span id="songNameDisplay">Nenhuma música</span>
+      <div class="song-marquee-container">
+        <span style="margin-right: 5px;"></span>
+        <div class="marquee-window">
+          <span id="songNameDisplay">Nenhuma música</span>
+        </div>
       </div>
 
       <div style="flex-grow: 1; max-width: 240px; margin: 0 auto 0 15px; display: flex; align-items: center;">
@@ -69,6 +72,7 @@
           <div style="margin-bottom: 10px;">
             <label style="display: block; font-size: 12px; margin-bottom: 5px;">Tamanho do Teclado:</label>
             <select id="keyboardSize" style="width: 100%; padding: 5px; background: #3a4747; color: white; border: 1px solid #556666; border-radius: 4px;">
+              <option value="24" selected> 24 Teclas</option>
               <option value="61" selected>61 Teclas (Padrão)</option>
               <option value="76">76 Teclas</option>
               <option value="88">88 Teclas (Piano Completo)</option>

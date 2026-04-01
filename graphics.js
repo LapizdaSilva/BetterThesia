@@ -6,9 +6,11 @@ const particles = [];
 
 function buildKeyboard(size) {
   KEYS = [];
+  
   if (size === 61) { START_MIDI = 36; KEY_COUNT = 61; } // Começa no Dó 2
   else if (size === 76) { START_MIDI = 28; KEY_COUNT = 76; } // Começa no Mi 1
-  else if (size === 88) { START_MIDI = 21; KEY_COUNT = 88; } // Começa no Lá 0 (Piano Real)
+  else if (size === 88) { START_MIDI = 21; KEY_COUNT = 88; } // Começa no Lá 0 
+  else if (size === 24) { START_MIDI = 64; KEY_COUNT = 24} // Começa no C6 (Dó 6)
 
   for (let i = 0; i < KEY_COUNT; i++) {
     const midi = START_MIDI + i;
