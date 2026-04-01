@@ -5,7 +5,7 @@ html, body{
   height: 100%;
   overflow: hidden; 
   background-color: #1a1a1a; 
-  font-family: sans-serif;
+  font-family: 'Poppins', sans-serif;
 }
 
 canvas {

@@ -113,6 +113,8 @@ function handleAutoPlayback() {
 
 function registerHit() {
   combo++;
+  console.log(`A pontuação atual de combo é: ${combo}`);
+
   if (combo > maxComboThisSong) maxComboThisSong = combo;
   
   if (combo >= 30) scoreMultiplier = 4;
@@ -146,6 +148,31 @@ function endGame() {
   timeline.playing = false;
   playPauseBtn.textContent = "▶";
   stopAllNotes();
+
+  const totalNotasEsperadas = songNotes.filter(n => shouldPlay(n)).length;
+  const pontuacaoMaximaEstimada = totalNotasEsperadas * 40
+
+  const precisao = pontuacaoMaximaEstimada > 0 ? (scoreHits / pontuacaoMaximaEstimada) : 0;
+
+  let rankStr= "D";
+  let rankColor = "#ff4444"
+
+  if (practiceMode === "off") {
+    rankStr = "AUTO"; // Auto play não exibe rank
+    rankColor = "#aaaaaa";
+  } else if (precisao >= 0.90) { 
+    rankStr = "S"; rankColor = "#00ffff"; 
+  } else if (precisao >= 0.75) { 
+    rankStr = "A"; rankColor = "#55ff55"; 
+  } else if (precisao >= 0.50) { 
+    rankStr = "B"; rankColor = "#ffff55"; 
+  } else if (precisao >= 0.25) { 
+    rankStr = "C"; rankColor = "#ffaa00"; 
+  }
+
+  const finalRankElement = document.getElementById("finalRank");
+  finalRankElement.textContent = rankStr;
+  finalRankElement.style.color = rankColor;
 
   const songName = document.getElementById("songNameDisplay").textContent;
   let highScore = localStorage.getItem("highScore_" + songName) || 0;
@@ -188,10 +215,13 @@ window.addEventListener("click", (e) => {
 modeSelect.addEventListener("change", (e) => {
   practiceMode = e.target.value;
   localStorage.setItem("betterThesia_practiceMode", practiceMode)
-  if (practiceMode === "off" && waitingForUser) {
+  if (waitingForUser) {
     waitingForUser = false;
     expectedNotes.clear();
-    if (playPauseBtn.textContent === "⏸") { timeline.playing = true; timeline.last = performance.now(); }
+    if (playPauseBtn.textContent === "⏸") {
+      timeline.playing = true;
+      timeline.last = performance.now(); 
+    }
   }
 });
 
