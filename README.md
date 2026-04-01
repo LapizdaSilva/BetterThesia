@@ -4,7 +4,7 @@
 
 Web interactive application inspired by Synthesia, made to help those who seek free piano appretinceship and midi files playback directly on your browser.
 
-**🔗 [BetterThesia at Netlify](https://willowy-cranachan-0deb13.netlify.app/)**
+**[BetterThesia at Vercel](https://better-thesia.vercel.app/)**
 
 ---
 
@@ -50,7 +50,7 @@ As the project uses just static files, it's very simple to run it on your own ma
 
 Uma aplicação web interativa inspirada no Synthesia, criada para ajudar no aprendizado de piano e reprodução de arquivos MIDI direto no navegador. 
 
-**🔗 [BetterThesia no Netlify](https://willowy-cranachan-0deb13.netlify.app/)**
+**[BetterThesia no Vercel](https://better-thesia.vercel.app/)**
 
 ---
 
