@@ -82,6 +82,15 @@ function checkPracticeCollision() {
   }
 }
 
+function valueDetect(){
+  var select = document.getElementById("songSelect")
+  var valor = select.value;
+    if (valor == "arquivo"){
+      alert("funciono")
+    }
+      
+}
+
 function stopTimelineAndPrepare(exactStartTime) {
   timeline.playing = false;
   waitingForUser = true;
@@ -247,11 +256,25 @@ if (savedSize) {
   buildKeyboard(sizeInt);
 }
 
+// const midiInput = document.getElementById("midiInput");
+
 document.getElementById("songSelect").addEventListener("change", async (e) => {
   const url = e.target.value;
   if (!url) return;
-  const songName = e.target.options[e.target.selectedIndex].text;
-  setSongName(file.name);
+
+  if (url === "upload") {
+    midiInput.click(); 
+    e.target.value = "";
+    return; 
+  }
+
+  const songTitle = e.target.options[e.target.selectedIndex].text;
+
+  try {
+    setSongName(songTitle); 
+  } catch (error) {
+    console.log(error);
+  }
   
   timeline.playing = false;
   playPauseBtn.textContent = "▶";
@@ -259,7 +282,7 @@ document.getElementById("songSelect").addEventListener("change", async (e) => {
   try {
     const response = await fetch(url);
     const arrayBuffer = await response.arrayBuffer();
-    processMidiData(arrayBuffer);
+    processMidiData(arrayBuffer); 
   } catch (err) {
     alert("Erro ao carregar música. Verifique se o arquivo existe na pasta midis!");
   }
@@ -315,6 +338,7 @@ function seekTo(targetTimeMs) {
 }
 
 function setSongName(newName) {
+  console.log(newName)
   const nameDisplay = document.getElementById("songNameDisplay");
   const windowContainer = nameDisplay.parentElement;
 
@@ -345,9 +369,6 @@ keyboardCanvas.addEventListener("mouseup", () => KEYS.forEach((k) => { if (k.act
 progressBar.addEventListener("mousedown", () => isDraggingProgress = true);
 progressBar.addEventListener("mouseup", () => isDraggingProgress = false);
 progressBar.addEventListener("input", (e) => seekTo(parseFloat(e.target.value)));
-
-getBtn.addEventListener("click", () => midiInput.click());
-
 
 midiInput.addEventListener("change", async (e) => {
   const file = e.target.files[0];

@@ -39,7 +39,6 @@ const comboDisplay = document.getElementById("comboDisplay");
 const gameOverScreen = document.getElementById("gameOverScreen");
 const restartBtn = document.getElementById("restartBtn");
 
-const getBtn = document.getElementById("get");
 const midiInput = document.getElementById("midiInput");
 
 const pcKeyboardMap = {

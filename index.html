@@ -15,14 +15,15 @@
 
   <body style="margin: 0; background-color: #4f5b5b">
     <div id="topbar">
-      <button id="get" class="botaoArquivo">🡻</button>
+      <!-- <button id="get" class="botaoArquivo">🡻</button> -->
       <input type="file" id="midiInput" accept=".mid,.midi" style="display: none;" />
 
-      <select id="songSelect" style="background: #556666; color: #e0f2f2; border: none; border-radius: 6px; height: 40px; margin-left: 10px; padding: 0 10px; cursor: pointer;">
+      <select id="songSelect" onchange="valueDetect()">
         <option value="">Escolher música...</option>
-        <option value="./Midis/A Thousand Miles.mid">A Thousand Miles</option>
+        <option value="./Midis/ThousandMiles.mid">A Thousand Miles</option>
         <option value="./Midis/nocturne.mid">Nocturne</option>
         <option value="./Midis/Experience.mid">Experience</option>
+        <option value="upload" >Escolher no computador</option>
       </select>
 
       <div class="botaoCentro">
@@ -32,13 +33,12 @@
       </div>
 
       <div class="song-marquee-container">
-        <span style="margin-right: 5px;"></span>
         <div class="marquee-window">
           <span id="songNameDisplay">Nenhuma música</span>
         </div>
       </div>
 
-      <div style="flex-grow: 1; max-width: 240px; margin: 0 auto 0 15px; display: flex; align-items: center;">
+      <div id="progBar">
         <input type="range" id="progressBar" min="0" value="0" step="1" style="width: 100%; cursor: pointer;" />
       </div>
       
