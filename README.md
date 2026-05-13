@@ -38,14 +38,6 @@ As the project uses just static files, it's very simple to run it on your own ma
 
 3. To ensure that the libraries function correctly, use an extension such as "Live Server" in Vs Code to run the project locally
 
-## Next Steps
-
-[ ] Playback reproduciton rate.
-
-[ ] Option to change zoom scale (note fall velocity).
-
-[ ] Visual effects when hitting the notes
-
 ## Portuguese Version: 
 
 Uma aplicação web interativa inspirada no Synthesia, criada para ajudar no aprendizado de piano e reprodução de arquivos MIDI direto no navegador. 
