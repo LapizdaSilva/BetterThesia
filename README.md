@@ -2,7 +2,7 @@
 
 ![Demonstration](https://github.com/user-attachments/assets/6f1b8a9e-3eb3-4257-a885-6c5fca8a0bc3)
 
-Web interactive application inspired by Synthesia, made to help those who seek free piano appretinceship and midi files playback directly on your browser.
+Web interactive application inspired by Synthesia, made to help those who seek free piano practice and midi files playback directly on your browser.
 
 **[BetterThesia at Vercel](https://better-thesia.vercel.app/)**
 
@@ -10,10 +10,10 @@ Web interactive application inspired by Synthesia, made to help those who seek f
 
 ## Features
 
-* **Suport for physical keyboard (Web MIDI API):** connect your keyboard ou digital piano via USB cable and play usin real notes.
+* **Support for physical keyboard (Web MIDI API):** connect your keyboard ou digital piano via USB cable and play using real notes.
 * **Realistic Audio (SoundFont):** Generated audio by real piano samples (hosted on cloud), replacing digital oscillators.
-* **MIDI files reading:** Make the upload of your own songs `.midi` or `.mid` to practice
-* **Practice Mode:** The song will pause and wait for you to press the correct note on your keyboard before continue.
+* **MIDI files reading:** Upload of your own songs `.midi` or `.mid` to practice
+* **Practice Mode:** The song will pause and wait for you to press the correct note on your keyboard before continuing.
 * **Auto-Play:** Watch the song being played perfectly by the machine with visual feedback of the notes.
 
 ---
